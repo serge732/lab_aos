@@ -38,6 +38,9 @@ int main(int argc, char *argv[])
 	curr_pos += offset;
 	printf("Write second. Current position: %d\n", curr_pos);
 
+	curr_pos = lseek(fd, 100, SEEK_SET);
+	printf("Seek set 100. Current position: %d\n", curr_pos);
+
 	offset = write(fd, str1_buffer, 5);
 	curr_pos += offset;
 	printf("Write first. Current position: %d\n", curr_pos);
