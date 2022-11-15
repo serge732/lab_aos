@@ -41,4 +41,8 @@ int main(int argc, char *argv[])
 	offset = write(fd, str1_buffer, 5);
 	curr_pos += offset;
 	printf("Write first. Current position: %d\n", curr_pos);
+
+	close(fd);
+
+	return 0;
 }
