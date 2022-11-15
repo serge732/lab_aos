@@ -20,9 +20,25 @@ int main(int argc, char *argv[])
 	char str1_buffer[5];
 	char str2_buffer[5];
 
-	read(fd, str1_buffer, 5);
-	read(fd, str2_buffer, 5);
-	lseek(fd, 0, SEEK_SET);
-	write(fd, str2_buffer, 5);
-	write(fd, str1_buffer, 5);
+	int curr_pos = 0;
+	int offset = 0;
+	
+	offset = read(fd, str1_buffer, 5);
+	curr_pos += offset;
+	printf("Read first. Current position: %d\n", curr_pos);
+
+	offset = read(fd, str2_buffer, 5);
+	curr_pos += offset;
+	printf("Read second. Current position: %d\n", curr_pos);
+
+	curr_pos = lseek(fd, 0, SEEK_SET);
+	printf("Seek set 0. Current position: %d\n", curr_pos);
+
+	offset = write(fd, str2_buffer, 5);
+	curr_pos += offset;
+	printf("Write second. Current position: %d\n", curr_pos);
+
+	offset = write(fd, str1_buffer, 5);
+	curr_pos += offset;
+	printf("Write first. Current position: %d\n", curr_pos);
 }
