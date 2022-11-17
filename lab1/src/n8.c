@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        return copy();
+        copy();
     }
     else if (argc == 3)
     {
@@ -34,6 +34,15 @@ int main(int argc, char *argv[])
         close(1);
         open(argv[2], O_WRONLY);
 
-        return copy();
+        copy();
     }
+    else
+    {
+        printf("Invalid args!"
+               "Enter %s <source filename> <destination filename> "
+               "or call without args!",
+               argv[0]);
+    }
+
+    return 0;
 }
