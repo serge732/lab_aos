@@ -4,17 +4,17 @@
 
 #define B_SZE 1
 
-int copy(const int source_fd, const int destination_fd)
+int copy()
 {
     char str_buffer[B_SZE];
 
-    int bytes_read = read(source_fd, str_buffer, B_SZE);
+    int bytes_read = read(0, str_buffer, B_SZE);
 
     while (bytes_read > 0)
     {
 
-        write(destination_fd, str_buffer, bytes_read);
-        bytes_read = read(source_fd, str_buffer, B_SZE);
+        write(1, str_buffer, bytes_read);
+        bytes_read = read(0, str_buffer, B_SZE);
     }
 
     return 0;
@@ -24,13 +24,16 @@ int main(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        return copy(0, 1);
+        return copy();
     }
     else if (argc == 3)
     {
-        int source_fd = open(argv[1], O_RDONLY);
-        int destination_fd = open(argv[2], O_WRONLY);
+        close(0);
+        open(argv[1], O_RDONLY);
 
-        return copy(source_fd, destination_fd);
+        close(1);
+        open(argv[2], O_WRONLY);
+
+        return copy();
     }
 }
