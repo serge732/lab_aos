@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     {
         printf("i'm parent/"
                "i want to kill my child...\n");
+        sleep(1);
 
         int sig = 0;
         if (argc == 2)
