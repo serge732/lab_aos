@@ -1,6 +1,8 @@
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define BUFSZ 3
@@ -20,18 +22,20 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    struct sigaction act;
     sigset_t mask;
+    char cld_buf[BUFSZ];
+    char prnt_buf[BUFSZ];
+    int bytes_read_cld = 0;
+    int bytes_read_prnt = 0;
+
+    act.sa_handler = sig_handler;
+    sigemptyset(&act.sa_mask);
+    sigaction(SIGUSR1, &act, NULL);
+    sigaction(SIGUSR2, &act, NULL);
+
     sigfillset(&mask);
-    sigdelset(&mask, SIGINT);
     sigprocmask(SIG_SETMASK, &mask, NULL);
-
-    struct sigaction usr1act, usr2act;
-
-    usr1act.sa_handler = sig_handler;
-    sigaction(SIGUSR1, &usr1act, NULL);
-
-    usr2act.sa_handler = sig_handler;
-    sigaction(SIGUSR2, &usr2act, NULL);
 
     int fd = open(argv[1], O_RDONLY);
     if (fd == -1)
@@ -48,12 +52,9 @@ int main(int argc, char *argv[])
         return 3;
 
     case 0:
-        sigset_t cldmask;
-        sigprocmask(SIG_SETMASK, NULL, &cldmask);
-        sigdelset(&cldmask, SIGUSR2);
+        sigdelset(&mask, SIGUSR2);
 
-        char cld_buf[BUFSZ];
-        int bytes_read_cld = read(fd, cld_buf, BUFSZ);
+        bytes_read_cld = read(fd, cld_buf, BUFSZ);
         if (bytes_read_cld == -1)
         {
             perror("read error");
@@ -62,23 +63,24 @@ int main(int argc, char *argv[])
 
         while (bytes_read_cld)
         {
-            printf("%s\n", cld_buf);
+            write(STDOUT_FILENO, cld_buf, BUFSZ);
             kill(getppid(), SIGUSR1);
-            sigsuspend(&cldmask);
-            sleep(1);
+            sigsuspend(&mask);
             bytes_read_cld = read(fd, cld_buf, BUFSZ);
+            if (bytes_read_cld == -1)
+            {
+                perror("read error");
+                return 4;
+            }
         }
 
         break;
 
     default:
-        sigset_t prntmask;
-        sigprocmask(SIG_SETMASK, NULL, &prntmask);
-        sigdelset(&prntmask, SIGUSR1);
-        sigsuspend(&prntmask);
+        sigdelset(&mask, SIGUSR1);
+        sigsuspend(&mask);
 
-        char prnt_buf[BUFSZ];
-        int bytes_read_prnt = read(fd, prnt_buf, BUFSZ);
+        bytes_read_prnt = read(fd, prnt_buf, BUFSZ);
         if (bytes_read_prnt == -1)
         {
             perror("read error");
@@ -87,11 +89,15 @@ int main(int argc, char *argv[])
 
         while (bytes_read_prnt)
         {
-            printf("%s\n", prnt_buf);
+            write(STDOUT_FILENO, prnt_buf, BUFSZ);
             kill(pid, SIGUSR2);
-            sigsuspend(&prntmask);
-            sleep(1);
+            sigsuspend(&mask);
             bytes_read_prnt = read(fd, prnt_buf, BUFSZ);
+            if (bytes_read_prnt == -1)
+            {
+                perror("read error");
+                return 4;
+            }
         }
 
         break;
