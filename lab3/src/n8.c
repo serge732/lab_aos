@@ -4,6 +4,15 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+int i = 0;
+
+void sig_handler(int sig)
+{
+    printf("i'm child/"
+            "i caught signal %d\n", sig);
+    i = 99;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc > 2)
@@ -34,15 +43,6 @@ int main(int argc, char *argv[])
     if (pid == 0)
     {
         printf("i'm child\n");
-
-        int i = 0;
-
-        void sig_handler(int sig)
-        {
-            printf("i'm child/"
-                    "i caught signal %d\n", sig);
-            i = 99;
-        }
 
         signal(sig, sig_handler);
 
