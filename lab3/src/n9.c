@@ -3,6 +3,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+void sig_handler(int sig)
+{
+    printf("i'm child/"
+            "i caught signal %d\n",
+            sig);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc > 2 || (argc == 2 && strcmp(argv[1], "1")))
@@ -27,13 +34,6 @@ int main(int argc, char *argv[])
 
         if (argc == 2 && !strcmp(argv[1], "1"))
         {
-            void sig_handler(int sig)
-            {
-                printf("i'm child/"
-                       "i caught signal %d\n",
-                       sig);
-            }
-
             signal(SIGALRM, sig_handler);
         }
 
