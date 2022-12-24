@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         return 4;
     }
 
+    printf("msqid: %d\n", msqid);
     printf("uid: %u\n", ds.msg_perm.uid);
     printf("gid: %u\n", ds.msg_perm.gid);
     printf("cid: %u\n", ds.msg_perm.cuid);
