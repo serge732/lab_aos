@@ -4,62 +4,64 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
-    int msqid = -1;
-    long mtype;
+    int server_msqid;
 
-    if (argc != 3)
+    if (argc != 2)
     {
         printf("Invalid args!\n"
-               "Enter %s <msqid> <mtype>\n",
+               "Enter %s <server_msqid>\n",
                argv[0]);
         return 1;
     }
 
-    msqid = atoi(argv[1]);
+    server_msqid = atoi(argv[1]);
+    if (server_msqid == 0)
+    {
+        printf("Incorrect <server_msqid>\n");
+        return 1;
+    }
+
+    int msqid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
     if (msqid == -1)
     {
-        printf("Incorrect <msqid>\n");
-        return 1;
+        perror("msgget error");
+        return 2;
     }
 
-    mtype = strtol(argv[2], NULL, 0);
-    if (mtype == 0)
-    {
-        printf("Incorrect <mtype>\n");
-        return 1;
-    }
-
-    printf("client %ld started...\n", mtype);
+    printf("client %d started...\n", msqid);
 
     while (1)
     {
-        struct msgbuf receiver_buf, my_buf;
-        receiver_buf.mtype = 7707;
+        struct msgbuf receiver_buf, buf;
+        receiver_buf.mtype = 1;
         char receiver_mtext[256];
 
-        printf("Enter receiver mtype: ");
+        printf("Enter receiver msqid: ");
         scanf("%d", &receiver_buf.receiver);
 
         printf("Enter receiver mtext: ");
         scanf("%s", receiver_mtext);
         strcpy(receiver_buf.mtext, receiver_mtext);
 
-        if ((msgsnd(msqid, &receiver_buf, sizeof(receiver_buf.mtext), 0)) == -1)
+        if ((msgsnd(server_msqid, &receiver_buf, sizeof(receiver_buf.mtext), 0)) == -1)
         {
-            perror("msgsnd error");
-            return 2;
-        }
-
-        printf("waiting message with type %ld...\n", mtype);
-
-        if ((msgrcv(msqid, &my_buf, sizeof(my_buf.mtext), mtype, 0)) == -1)
-        {
-            perror("msgrcv error");
+            perror("send error");
             return 3;
         }
+
+        printf("waiting...\n");
+
+        if ((msgrcv(server_msqid, &buf, sizeof(buf.mtext), msqid, 0)) == -1)
+        {
+            perror("msgrcv error");
+            return 4;
+        }
+
+        printf("message from client %ld: %s\n", buf.mtype, buf.mtext);
     }
 
     return 0;
