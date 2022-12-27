@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
             return 4;
         }
 
-        printf("message from client %ld: %s\n", buf.mtype, buf.mtext);
+        printf("received message: %s\n", buf.mtext);
     }
 
     return 0;
