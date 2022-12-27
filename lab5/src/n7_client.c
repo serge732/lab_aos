@@ -1,6 +1,7 @@
-#include "server.h"
+#include "msgbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <unistd.h>
@@ -35,35 +36,32 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        struct server_msg received_msg;
-        int client_msqid;
-        char message[256];
+        struct msgbuf receiver_buf, buf;
+        receiver_buf.mtype = msqid;
+        char receiver_mtext[256];
 
-        printf("Enter client msqid: \n");
-        scanf("%d", &client_msqid);
+        printf("Enter receiver msqid: ");
+        scanf("%d", &receiver_buf.receiver);
 
-        if (client_msqid == 0)
-        {
-            printf("Incorrect <client_msqid>\n");
-            return 1;
-        }
+        printf("Enter receiver mtext: ");
+        scanf("%s", receiver_mtext);
+        strcpy(receiver_buf.mtext, receiver_mtext);
 
-        printf("Enter message: \n");
-        scanf("%s", message);
-
-        if ((send(server_msqid, msqid, client_msqid, message)) == -1)
+        if ((msgsnd(server_msqid, &receiver_buf, sizeof(receiver_buf.mtext), 0)) == -1)
         {
             perror("send error");
             return 3;
         }
 
-        if ((msgrcv(msqid, &received_msg, sizeof(received_msg.mtext), 0, 0)) == -1)
+        printf("waiting...\n");
+
+        if ((msgrcv(msqid, &buf, sizeof(buf.mtext), 0, 0)) == -1)
         {
             perror("msgrcv error");
             return 4;
         }
 
-        printf("message from client %ld: %s\n", received_msg.mtype, received_msg.mtext);
+        printf("message from client %ld: %s\n", buf.mtype, buf.mtext);
     }
 
     return 0;

@@ -1,12 +1,12 @@
-#include "server.h"
+#include "msgbuf.h"
 #include <errno.h>
 #include <stdio.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-int main(int argc, char *argv[0])
+int main(int argc, char *argv[])
 {
-    key_t key = ftok(argv[0], 7);
+    key_t key = ftok(__FILE__, 'A');
     if (key == -1)
     {
         perror("ftok error");
@@ -24,23 +24,18 @@ int main(int argc, char *argv[0])
 
     while (1)
     {
-        struct server_msg received_msg;
+        struct msgbuf buf;
 
-        if ((msgrcv(msqid, &received_msg, sizeof(received_msg.mtext), 0, IPC_NOWAIT)) == -1)
+        if ((msgrcv(msqid, &buf, sizeof(buf.mtext), 0, 0)) == -1)
         {
-            if (errno == ENOMSG)
-            {
-                continue;
-            }
-
             perror("msgrcv error");
             return 3;
         }
 
-        printf("message from client %d to client %ld: %s\n",
-               received_msg.sender_msqid, received_msg.mtype, received_msg.mtext);
+        printf("message from client %ld to client %d: %s\n",
+               buf.mtype, buf.receiver, buf.mtext);
 
-        if ((send(received_msg.mtype, received_msg.sender_msqid, received_msg.mtype, received_msg.mtext)) == -1)
+        if ((msgsnd(buf.receiver, &buf, sizeof(buf.mtext), 0)) == -1)
         {
             perror("send error");
             return 4;
