@@ -1,6 +1,7 @@
-#include "server.h"
+#include "msgbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <unistd.h>
@@ -35,20 +36,24 @@ int main(int argc, char *argv[0])
 
     while (1)
     {
-        struct server_msg msg;
-        if ((send(server_msqid, msqid, 1, "hello from client")) == -1)
+        struct msgbuf receiver_buf, buf;
+        receiver_buf.receiver = msqid;
+        receiver_buf.mtype = 1;
+        strcpy(receiver_buf.mtext, "hello from client");
+
+        if ((msgsnd(server_msqid, &receiver_buf, sizeof(receiver_buf.mtext), 0)) == -1)
         {
             perror("send error");
             return 3;
         }
 
-        if ((msgrcv(msqid, &msg, sizeof(msg.mtext), 0, 0)) == -1)
+        if ((msgrcv(msqid, &buf, sizeof(buf.mtext), 0, 0)) == -1)
         {
             perror("msgrcv error");
             return 4;
         }
 
-        printf("message from server: %s\n", msg.mtext);
+        printf("message from server: %s\n", buf.mtext);
 
         sleep(2);
     }
