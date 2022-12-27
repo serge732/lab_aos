@@ -1,4 +1,4 @@
-#include "server.h"
+#include "msgbuf.h"
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -20,20 +20,20 @@ void sig_handler(int sig)
     }
 }
 
-int main(int argc, char *argv[0])
+int main(int argc, char *argv[])
 {
     struct sigaction act;
     act.sa_handler = sig_handler;
     sigaction(SIGINT, &act, 0);
 
-    key_t server_key = ftok(argv[0], 7);
+    key_t server_key = ftok(__FILE__, 'A');
     if (server_key == -1)
     {
         perror("server ftok error");
         return 1;
     }
 
-    key_t client_key = ftok(argv[0], 11);
+    key_t client_key = ftok(__FILE__, 'B');
     if (client_key == -1)
     {
         perror("client ftok error");
@@ -54,29 +54,25 @@ int main(int argc, char *argv[0])
         return 2;
     }
 
-    printf("server %d started...\n"
-           "answers will be sending to %d\n",
-           server_msqid, client_msqid);
+    printf("server %d started...\n", server_msqid);
+    printf("client %d started...\n", client_msqid);
 
     while (1)
     {
-        struct server_msg received_msg;
+        struct msgbuf buf;
 
-        if ((msgrcv(server_msqid, &received_msg, sizeof(received_msg.mtext), 0, IPC_NOWAIT)) == -1)
+        if ((msgrcv(server_msqid, &buf, sizeof(buf.mtext), 0, 0)) == -1)
         {
-            if (errno == ENOMSG)
-            {
-                continue;
-            }
-
             perror("msgrcv error");
             return 3;
         }
 
-        printf("message from client %d to client %ld: %s\n",
-               received_msg.sender_msqid, received_msg.mtype, received_msg.mtext);
+        printf("message from client %ld to client %d: %s\n",
+               buf.mtype, buf.receiver, buf.mtext);
 
-        if ((send(client_msqid, received_msg.sender_msqid, received_msg.mtype, received_msg.mtext)) == -1)
+        buf.mtype = buf.receiver;
+
+        if ((msgsnd(client_msqid, &buf, sizeof(buf.mtext), 0)) == -1)
         {
             perror("send error");
             return 4;
