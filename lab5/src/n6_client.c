@@ -38,7 +38,6 @@ int main(int argc, char *argv[0])
     {
         struct msgbuf receiver_buf, buf;
         receiver_buf.receiver = msqid;
-        receiver_buf.mtype = 1;
         strcpy(receiver_buf.mtext, "hello from client");
 
         if ((msgsnd(server_msqid, &receiver_buf, sizeof(receiver_buf.mtext), 0)) == -1)
